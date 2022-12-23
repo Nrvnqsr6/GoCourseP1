@@ -2,101 +2,107 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type iUpdatable interface {
-	Update() int
+	Update() uuid.UUID
 }
 
-type Update struct {
-	id int
+type TypeWithUpdate struct {
+	id uuid.UUID
 }
 
-func (update Update) Update() int {
+func (update TypeWithUpdate) Update() uuid.UUID {
 	return update.id
 }
 
 type iUnifiedStruct interface {
-	GetData() int
+	GetData() uuid.UUID
 }
 
 type UnifiedStruct struct {
 	model iUpdatable
 }
 
-func (unifiedStruct UnifiedStruct) GetData() int {
+func (unifiedStruct UnifiedStruct) GetData() uuid.UUID {
 	return unifiedStruct.model.Update()
 }
 
-type iStatChannel interface {
-	GetData() int
+type iStatisticChannel interface {
+	GetData() uuid.UUID
 }
 
-type StatChannel struct {
+type StatisticChannel struct {
 	model iUpdatable
 }
 
-func (statChannel StatChannel) GetData() int {
+func (statChannel StatisticChannel) GetData() uuid.UUID {
 	return statChannel.model.Update()
 }
 
 func main() {
-	//print("aaaaaa")
 	ctx := context.Background()
-	ch1 := make(chan iStatChannel)
-	ch2 := make(chan iStatChannel)
-	//cl := StatChannel{model: Update{id: 10}}
-	//print(cl.model)
+	ch1 := make(chan iStatisticChannel)
+	ch2 := make(chan iStatisticChannel)
 	go func() {
-		ch1 <- StatChannel{model: Update{id: 10}}
-		ch2 <- StatChannel{model: Update{id: 5}}
+		ch1 <- StatisticChannel{model: TypeWithUpdate{id: uuid.New()}}
+		ch2 <- StatisticChannel{model: TypeWithUpdate{id: uuid.New()}}
 	}()
-	MergeDataChanArg(ctx, ch1, ch2)
 
-	MergeDataInterfaceArg(ctx, StatChannel{model: Update{id: 10}}, StatChannel{model: Update{id: 5}})
-	// a1 := <-a
-	// print(a1.GetData())
-	// a2 := <-a
-	// print(a2.GetData())
+	MergeDataInterfaceArg(ctx, StatisticChannel{model: TypeWithUpdate{id: uuid.New()}}, StatisticChannel{model: TypeWithUpdate{id: uuid.New()}})
+	a := MergeDataChanArg(ctx, ch1, ch2)
+	a1 := <-a
+	fmt.Println(a1.GetData())
+	a2 := <-a
+	fmt.Println(a2.GetData())
 }
 
-func MergeDataChanArg(ctx context.Context, chans ...chan iStatChannel) chan iUnifiedStruct {
-	//outUnifiedStruct := UnifiedStruct{out: make(chan int)}
+func MergeDataChanArg(ctx context.Context, chans ...chan iStatisticChannel) chan iUnifiedStruct {
 	var wg sync.WaitGroup
 
 	outUnifiedStruct := make(chan iUnifiedStruct)
 
-	send := func(c chan iStatChannel) {
-		for n := range c {
-			outUnifiedStruct <- n
-		}
-		wg.Done()
-	}
-
 	wg.Add(len(chans))
 
 	for _, c := range chans {
-		go send(c)
+		go func(c chan iStatisticChannel) {
+			defer wg.Done()
+			for val := range c {
+				outUnifiedStruct <- val
+			}
+		}(c)
 	}
+
+	go func() {
+		wg.Wait()
+		close(outUnifiedStruct)
+	}()
+
 	return outUnifiedStruct
 }
 
-func MergeDataInterfaceArg(ctx context.Context, chans ...iStatChannel) chan iUnifiedStruct {
-	//outUnifiedStruct := UnifiedStruct{out: make(chan int)}
+func MergeDataInterfaceArg(ctx context.Context, chans ...iStatisticChannel) chan iUnifiedStruct {
 	var wg sync.WaitGroup
 
 	outUnifiedStruct := make(chan iUnifiedStruct)
 
-	send := func(c iStatChannel) {
-		outUnifiedStruct <- c
-		wg.Done()
-	}
-
 	wg.Add(len(chans))
 
 	for _, c := range chans {
-		go send(c)
+		go func(c iStatisticChannel) {
+			defer wg.Done()
+			outUnifiedStruct <- c
+		}(c)
 	}
+
+	go func() {
+		wg.Wait()
+		close(outUnifiedStruct)
+	}()
+
 	return outUnifiedStruct
 }
