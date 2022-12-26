@@ -1,25 +1,33 @@
 package model
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
 type User struct {
-	id   uuid.UUID
-	name string
+	ID        uuid.UUID `json:"ID"`
+	Name      string    `json:"name"`
+	Login     string    `json:"login"`
+	Password  string    `json:"password"`
+	Phone     string    `json:"phone"`
+	BirthDate time.Time `json:"birthDate"`
 }
 
-func CreateUser(name string) *User {
+// type FIO struct {
+// 	Name       string
+// 	Surname    string
+// 	Patronymic string
+// }
+
+func NewUser(name string, login string, password string, phone string, birthDate time.Time) *User {
 	return &User{
-		id:   uuid.New(),
-		name: name,
+		ID:        uuid.New(),
+		Name:      name,
+		Login:     login,
+		Password:  password,
+		Phone:     phone,
+		BirthDate: birthDate,
 	}
-}
-
-func (user *User) Update(newName string) {
-	user.name = newName
-}
-
-func (user User) GetUUID() uuid.UUID {
-	return user.id
 }
