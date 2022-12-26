@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"part2/internal/consts"
 	"part2/internal/model"
+	"part2/internal/service"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -14,10 +12,9 @@ func main() {
 	date2 := time.Now()
 	date2.Date()
 	u := model.NewUser("alex", "alex228", "qwe", "89658481895", date)
-	fmt.Print(u)
+	//fmt.Print(u)
 
-	router := gin.Default()
-	router.GET("/users", model.User)
+	router := service.SetupRouter()
 
 	router.Run("localhost:8080")
 }
