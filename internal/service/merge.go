@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-func MergeData(ctx context.Context, chans ...<-chan model.Status) chan model.Status {
+func MergeData(ctx context.Context, chans ...chan model.Status) chan model.Status {
 	outUnifiedChan := make(chan model.Status)
 	var wg sync.WaitGroup
 	wg.Add(len(chans))
